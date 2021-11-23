@@ -1,0 +1,117 @@
+﻿@{
+    ViewData["Title"] = "Flash Parking";
+}
+<head>
+    <title>Title of the document</title>
+    <style>
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            height: 40px;
+            margin-bottom: 20px;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            padding: 12px 16px;
+            z-index: 1;
+        }
+
+        table,
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+    </style>
+</head>
+<div class="text-center">
+    <h1 class="display-4">Welcome to Flash Park</h1>
+    <p>Parking Management Made Simple</p>
+</div>
+<div>
+    Location
+    <br />
+    @Html.DropDownList("Parking Lots", (IEnumerable<SelectListItem>)ViewBag.ParkingLots, "Select a Lot", new { @class = "dropdown", @onchange = "GetParkingSpotCount()" })
+
+    <table border="1">
+        <tr>
+            <th>Maximum Capacity</th>
+            <th>Available Spots</th>
+            <th>Status</th>
+            <th>Actions</th>
+
+        </tr>
+        <tr>
+            <td id="tdMaxSpots">
+                15
+            </td>
+            <td id="tdAvilSpots">
+                15
+            </td>
+            <td id="tdStatus">
+                <p style="color:green">Open</p>
+            </td>
+            <td>
+                <button class="primary btns" onclick="UpdateParkingSpotCount('Add')">Add</button>
+                <button class="primary btns" onclick="UpdateParkingSpotCount('Delete')">Delete</button>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        GetParkingSpotCount();
+    });
+
+    function GetParkingSpotCount() {
+        var locationId = $('#Parking_Lots option:selected').val();
+        $.ajax({
+            type: 'GET',
+            url: '/api/ParkingApi/' + locationId,
+            success: function (result) {
+                $('#tdAvilSpots').text(result.AvailableSpots);
+                $('#tdMaxSpots').text(result.TotalSpots);
+                if (result.AvailableSpots < result.TotalSpots) {
+                    $("#tdStatus").html("<p style='color:green'>Open</p>");
+                }
+                else if (result.AvailableSpots >= result.TotalSpots) {
+                    $("#tdStatus").html("<p style='color:red'>Full</p>");
+                }
+            }
+        });
+    }
+
+    function UpdateParkingSpotCount(actiontype) {
+        var locationId = $('#Parking_Lots option:selected').val();
+        $.ajax({
+            data: {
+                locationId: locationId,
+                actionType: actiontype
+            },
+            dataType: 'json',
+            type: 'POST',
+            url: '/api/ParkingApi/' + actiontype + '/' + locationId,
+            success: function (result) {
+                alert(actiontype + " completed Successfully. ");
+                $('#tdAvilSpots').text(result.AvailableSpots);
+                $('#tdMaxSpots').text(result.TotalSpots);
+                if (result.AvailableSpots < result.TotalSpots) {
+                    $("#tdStatus").html("<p style='color:green'>Open</p>");
+                }
+                else if (result.AvailableSpots >= result.TotalSpots) {
+                    $("#tdStatus").html("<p style='color:red'>Full</p>");
+                }
+            },
+            fail: function (result) {
+                alert('request failed');
+            }
+        });
+    }
+</script>
